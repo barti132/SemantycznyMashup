@@ -33,9 +33,7 @@ def get_data_from_wikidata(country):
     }
     ORDER BY RAND()
     LIMIT 1
-    """.format(country)
-
-    print(query)
+    """
 
     wikidata.setQuery(query)
     wikidata.setReturnFormat(SPARQLWrapper.JSON)
