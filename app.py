@@ -1,21 +1,27 @@
 """
 Semantyczny Mashup
 
-pip install sparqlwrapper rdflib owlready2 Flask
+pip install sparqlwrapper rdflib owlready2 Flask flask-cors
 """
 from random import seed, randint
 from flask import Flask
+from flask_cors import CORS
 import SPARQLWrapper
 import json
 
 app = Flask(__name__)
+CORS(app)
 
 # endpoint zwraca nam losowego twórce dla podanego kraju
+
+
 @app.route('/artist/<country>')
 def get_random_artist(country):
     return get_data_from_wikidata(country)
 
 # wybiera 10 "losowych" twórców i losuje jednego
+
+
 def choose_artist(country):
     wikidata = SPARQLWrapper.SPARQLWrapper("https://query.wikidata.org/sparql")
     query = """
@@ -55,6 +61,8 @@ def choose_artist(country):
     return artists[randint(0, len(artists)) - 1]
 
 # pobranie danych z wikidata o twórcy
+
+
 def get_data_from_wikidata(country):
     wikidata = SPARQLWrapper.SPARQLWrapper("https://query.wikidata.org/sparql")
 
