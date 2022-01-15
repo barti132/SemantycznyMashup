@@ -3,141 +3,23 @@ Semantyczny Mashup
 
 pip install sparqlwrapper rdflib owlready2 Flask flask-cors
 """
-from random import seed, randint
+
+from random import seed
+
 from flask import Flask
 from flask_cors import CORS
-import SPARQLWrapper
-import json
+
+import get_artist
 
 app = Flask(__name__)
 CORS(app)
 
+
 # endpoint zwraca nam losowego twórce dla podanego kraju
-
-
+# TODO: przrobić nazwe kraju na kod iso
 @app.route('/artist/<country>')
 def get_random_artist(country):
-    return get_data_from_wikidata(country)
-
-# wybiera 10 "losowych" twórców i losuje jednego
-
-
-def choose_artist(country):
-    wikidata = SPARQLWrapper.SPARQLWrapper("https://query.wikidata.org/sparql")
-    query = """
-        PREFIX wd: <http://www.wikidata.org/entity/> 
-        PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-
-        SELECT DISTINCT ?name WHERE{
-            {
-                ?entity wdt:P106 wd:Q639669;
-                    wdt:P1559 ?name ;
-                    wdt:P1902 ?spotify ;
-                    wdt:P27 ?country .
-                ?country rdfs:label \"""" + country + """\"@en .
-            }
-            UNION
-            {
-                ?entity wdt:P106 wd:Q177220;
-                    wdt:P1559 ?name ;
-                    wdt:P1902 ?spotify ;
-                    wdt:P27 ?country .
-                ?country rdfs:label \"""" + country + """\"@en .
-            }
-        }
-        ORDER BY RAND()
-        LIMIT 10
-        """
-
-    wikidata.setQuery(query)
-    wikidata.setReturnFormat(SPARQLWrapper.JSON)
-    wd_results = wikidata.query().convert()
-
-    artists = []
-
-    for result in wd_results["results"]["bindings"]:
-        artists.append(result["name"]["value"])
-
-    return artists[randint(0, len(artists)) - 1]
-
-# pobranie danych z wikidata o twórcy
-
-
-def get_data_from_wikidata(country):
-    wikidata = SPARQLWrapper.SPARQLWrapper("https://query.wikidata.org/sparql")
-
-    artist = choose_artist(country)
-
-    query = """
-    PREFIX wd: <http://www.wikidata.org/entity/> 
-    PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-    PREFIX schema: <http://schema.org/>
-
-    SELECT DISTINCT ?name ?spotify ?img ?genreName ?countryName ?website ?description
-    WHERE {
-    {
-        ?entity wdt:P106 wd:Q639669;
-            rdfs:label \"""" + artist + """\"@en;
-            wdt:P1559 ?name;
-            wdt:P27 ?country;
-            wdt:P1902 ?spotify;
-            wdt:P136 ?genre;
-            wdt:P18 ?img;
-            schema:description ?description .
-        ?genre rdfs:label ?genreName.
-        ?country rdfs:label ?countryName.
-        OPTIONAL { ?entity wdt:P856 ?website }
-    }
-    UNION
-    {
-        ?entity wdt:P106 wd:Q177220;
-            rdfs:label \"""" + artist + """\"@en;
-            wdt:P1559 ?name;
-            wdt:P27 ?country;
-            wdt:P1902 ?spotify;
-            wdt:P136 ?genre;
-            wdt:P18 ?img;
-            schema:description ?description.
-        ?genre rdfs:label ?genreName.
-        ?country rdfs:label ?countryName.
-        OPTIONAL { ?entity wdt:P856 ?website }
-    }
-    FILTER (lang(?genreName) = 'en')
-    FILTER (lang(?countryName) = 'en')
-    FILTER (lang(?description) = 'en')
-    }
-    """
-
-    wikidata.setQuery(query)
-    wikidata.setReturnFormat(SPARQLWrapper.JSON)
-    wd_results = wikidata.query().convert()
-
-    name = artist
-    spotify = ""
-    description = ""
-    img = set()
-    genre = set()
-    country = set()
-    website = set()
-
-    for result in wd_results["results"]["bindings"]:
-        spotify = result["spotify"]["value"]
-        description = result["description"]["value"]
-        img.add(result["img"]["value"])
-        genre.add(result["genreName"]["value"])
-        country.add(result["countryName"]["value"])
-        website.add(result["website"]["value"])
-
-    json_out = {
-        "name": name,
-        "description": description,
-        "spotify": spotify,
-        "image": list(img),
-        "genre": list(genre),
-        "country": list(country),
-        "website": list(website)
-    }
-    return json.dumps(json_out)
+    return get_artist.get_data_about_artist(country)
 
 
 if __name__ == '__main__':
