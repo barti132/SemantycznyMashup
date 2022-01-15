@@ -14,6 +14,7 @@ app = Flask(__name__)
 
 
 # endpoint zwraca nam losowego twórce dla podanego kraju
+# TODO: przrobić nazwe kraju na kod iso
 @app.route('/artist/<country>')
 def get_random_artist(country):
     return get_artist.get_data_about_artist(country)
