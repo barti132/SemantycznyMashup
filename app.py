@@ -25,7 +25,7 @@ def choose_artist(country):
         SELECT DISTINCT ?name WHERE{
             {
                 ?entity wdt:P106 wd:Q639669;
-                    wdt:P1559 ?name ;
+                    rdfs:label ?name ;
                     wdt:P1902 ?spotify ;
                     wdt:P27 ?country .
                 ?country rdfs:label \"""" + country + """\"@en .
@@ -33,11 +33,12 @@ def choose_artist(country):
             UNION
             {
                 ?entity wdt:P106 wd:Q177220;
-                    wdt:P1559 ?name ;
+                    rdfs:label ?name ;
                     wdt:P1902 ?spotify ;
                     wdt:P27 ?country .
                 ?country rdfs:label \"""" + country + """\"@en .
             }
+            FILTER (lang(?name) = 'en')
         }
         ORDER BY RAND()
         LIMIT 10
@@ -52,13 +53,17 @@ def choose_artist(country):
     for result in wd_results["results"]["bindings"]:
         artists.append(result["name"]["value"])
 
+    print(artists)
+
     return artists[randint(0, len(artists)) - 1]
+
 
 # pobranie danych z wikidata o twórcy
 def get_data_from_wikidata(country):
     wikidata = SPARQLWrapper.SPARQLWrapper("https://query.wikidata.org/sparql")
 
     artist = choose_artist(country)
+    print(artist)
 
     query = """
     PREFIX wd: <http://www.wikidata.org/entity/> 
@@ -104,7 +109,7 @@ def get_data_from_wikidata(country):
     wikidata.setReturnFormat(SPARQLWrapper.JSON)
     wd_results = wikidata.query().convert()
 
-    name = artist
+    name = ""
     spotify = ""
     description = ""
     img = set()
@@ -112,13 +117,17 @@ def get_data_from_wikidata(country):
     country = set()
     website = set()
 
+    has_web = 'website' in wd_results["results"]
+
     for result in wd_results["results"]["bindings"]:
+        name = result["name"]["value"]
         spotify = result["spotify"]["value"]
         description = result["description"]["value"]
         img.add(result["img"]["value"])
         genre.add(result["genreName"]["value"])
         country.add(result["countryName"]["value"])
-        website.add(result["website"]["value"])
+        if has_web:
+            website.add(result["website"]["value"])
 
     json_out = {
         "name": name,
@@ -129,7 +138,7 @@ def get_data_from_wikidata(country):
         "country": list(country),
         "website": list(website)
     }
-    return json.dumps(json_out)
+    return json.dumps(json_out, ensure_ascii=False).encode('utf8')
 
 
 if __name__ == '__main__':
