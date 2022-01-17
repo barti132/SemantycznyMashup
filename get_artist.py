@@ -6,8 +6,8 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
 # cid & secret here
-cid = 'e6e5428f792641739908a8f8d4ba1e49'
-secret = 'c0e87a1c8f784f49872569e90d22ac67'
+cid = ''
+secret = ''
 
 client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
 sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
@@ -40,9 +40,10 @@ def get_data_about_artist(country_code):
                 website.add(result["website"]["value"])
 
         if spotify != "":
-            break
+            audio = get_data_from_spotify(spotify)
+            if audio is not None:
+                break
 
-    audio = get_data_from_spotify(spotify)
     json_out = {
         "name": name,
         "description": description,
@@ -150,10 +151,6 @@ def get_data_from_wikidata(artist):
 
 # Dla wybranego twórcy ściaga top tracks i wybiera jednego z nich zwraca wynik jako json
 def get_data_from_spotify(artist_id):
-    """
-    Znane problemy:
-    1.)preview moze być nullem,
-    """
     result = sp.artist_top_tracks(artist_id, country='PL')
 
     name = []
@@ -161,10 +158,13 @@ def get_data_from_spotify(artist_id):
     cover_art = []
 
     for track in result["tracks"][:10]:
-        name.append(track["name"])
-        audio.append(track["preview_url"])
-        cover_art.append(track["album"]["images"][0]['url'])
+        if track["preview_url"] is not None:
+            name.append(track["name"])
+            audio.append(track["preview_url"])
+            cover_art.append(track["album"]["images"][0]['url'])
 
+    if len(cover_art) == 0:
+        return None
     i = randint(0, len(name) - 1)
     audio_track = {
         "name": name[i],
