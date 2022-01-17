@@ -6,8 +6,8 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
 # cid & secret here
-cid = ""
-secret = ""
+cid = 'e6e5428f792641739908a8f8d4ba1e49'
+secret = '2bfd2bfd9de14f0880b4f3e78e2c7719'
 
 
 client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
@@ -24,18 +24,18 @@ def choose_artist(country):
         SELECT DISTINCT ?name WHERE{
             {
                 ?entity wdt:P106 wd:Q639669;
-                    rdfs:label ?name ;
-                    wdt:P1902 ?spotify ;
-                    wdt:P27 ?country .
-                ?country rdfs:label \"""" + country + """\"@en .
+                    rdfs:label ?name;
+                    wdt:P1902 ?spotify;
+                    wdt:P27 ?country.
+                ?country wdt:P297 \"""" + country + """\".
             }
             UNION
             {
                 ?entity wdt:P106 wd:Q177220;
-                    rdfs:label ?name ;
-                    wdt:P1902 ?spotify ;
-                    wdt:P27 ?country .
-                ?country rdfs:label \"""" + country + """\"@en .
+                    rdfs:label ?name;
+                    wdt:P1902 ?spotify;
+                    wdt:P27 ?country.
+                ?country wdt:P297 \"""" + country + """\".
             }
             FILTER (lang(?name) = 'en')
         }
@@ -150,7 +150,7 @@ def get_data_from_spotify(artist_id):
     1.)preview moze być nullem,
     2.)artist_id czasem jest nullem???
     """
-    result = sp.artist_top_tracks(artist_id)
+    result = sp.artist_top_tracks(artist_id, country='PL')
 
     name = []
     audio = []
