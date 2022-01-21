@@ -17,6 +17,7 @@ from flask import Flask
 from flask_cors import CORS
 
 import get_artist
+import get_band
 
 app = Flask(__name__)
 CORS(app)
@@ -31,7 +32,7 @@ def get_random_artist(country):
 # endpoint zwraca nam losowy zespół dla podanego kraju
 @app.route('/band/<country>')
 def get_random_band(country):
-    pass
+    return get_band.get_data_about_band(country)
 
 
 if __name__ == '__main__':

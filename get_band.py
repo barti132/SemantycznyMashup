@@ -6,8 +6,7 @@ import SPARQLWrapper
 import spotify
 
 
-# pobiera dane z wikidata i spotify i łączy je w json
-def get_data_about_artist(country_code):
+def get_data_about_band(country_id):
     name = ""
     spotify_id = ""
     description = ""
@@ -15,10 +14,9 @@ def get_data_about_artist(country_code):
     genre = set()
     country = set()
     website = set()
-
     while True:
-        artist = choose_artist(country_code)
-        wd_results = get_data_from_wikidata(artist)
+        band = choose_band(country_id)
+        wd_results = get_data_from_wikidata(band)
 
         has_web = 'website' in wd_results["results"]
 
@@ -31,7 +29,6 @@ def get_data_about_artist(country_code):
             country.add(result["countryName"]["value"])
             if has_web:
                 website.add(result["website"]["value"])
-
         if spotify_id != "":
             audio = spotify.get_data_about_id(spotify_id)
             if audio is not None:
@@ -50,90 +47,91 @@ def get_data_about_artist(country_code):
     return json.dumps(json_out, ensure_ascii=False).encode('utf8')
 
 
-# wybiera 10 "losowych" twórców i losuje jednego
-def choose_artist(country):
+def choose_band(country):
     wikidata = SPARQLWrapper.SPARQLWrapper("https://query.wikidata.org/sparql")
-    print(country)
     query = """
-        PREFIX wd: <http://www.wikidata.org/entity/> 
-        PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+    PREFIX wd: <http://www.wikidata.org/entity/> 
+    PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 
-        SELECT DISTINCT ?name WHERE{
-            {
-                ?entity wdt:P106 wd:Q639669;
-                    rdfs:label ?name;
-                    wdt:P1902 ?spotify;
-                    wdt:P27 ?country.
-                ?country wdt:P297 \"""" + country + """\".
-            }
-            UNION
-            {
-                ?entity wdt:P106 wd:Q177220;
-                    rdfs:label ?name;
-                    wdt:P1902 ?spotify;
-                    wdt:P27 ?country.
-                ?country wdt:P297 \"""" + country + """\".
-            }
-            FILTER (lang(?name) = 'en')
-        }
-        ORDER BY RAND()
-        LIMIT 10
-        """
+    SELECT DISTINCT ?name ?spotify ?image ?followers WHERE{
+      {
+        ?entity wdt:P31 wd:Q215380 ;
+           rdfs:label ?name ;
+           wdt:P495 ?country ;
+           wdt:P1902 ?spotify ;
+           wdt:P8687 ?followers ;
+           wdt:P18 ?image .
+        ?country wdt:P297 \"""" + country + """\" .
+      }
+      UNION
+      {
+        ?entity wdt:P31 wd:Q215380 ;
+           rdfs:label ?name ;
+           wdt:P495 ?country ;
+           wdt:P1902 ?spotify ;
+           wdt:P18 ?image .
+        ?country wdt:P297 \"""" + country + """\" .
+      }
+      FILTER (lang(?name) = 'en')
+    }
+    ORDER BY DESC(?followers)
+    LIMIT 10
+    """
 
     wikidata.setQuery(query)
     wikidata.setReturnFormat(SPARQLWrapper.JSON)
     wd_results = wikidata.query().convert()
 
-    artists = []
+    bands = []
     for result in wd_results["results"]["bindings"]:
-        artists.append(result["name"]["value"])
+        bands.append(result["name"]["value"])
 
-    if len(artists) == 0:
+    if len(bands) == 0:
         return ""
-    return artists[randint(0, len(artists) - 1)]
+    band = bands[randint(0, len(bands) - 1)]
+    return band
 
 
-# pobiera dane o twórcy z wikidata
-def get_data_from_wikidata(artist):
+def get_data_from_wikidata(band):
     wikidata = SPARQLWrapper.SPARQLWrapper("https://query.wikidata.org/sparql")
     query = """
     PREFIX wd: <http://www.wikidata.org/entity/> 
     PREFIX wdt: <http://www.wikidata.org/prop/direct/>
     PREFIX schema: <http://schema.org/>
-
     SELECT DISTINCT ?name ?spotify ?img ?genreName ?countryName ?website ?description
     WHERE {
-    {
-        ?entity wdt:P106 wd:Q639669;
-            rdfs:label \"""" + artist + """\"@en;
-            wdt:P1559 ?name;
-            wdt:P27 ?country;
-            wdt:P1902 ?spotify;
-            wdt:P136 ?genre;
-            wdt:P18 ?img;
-            schema:description ?description .
+      {
+        ?entity wdt:P31 wd:Q215380;
+          rdfs:label \"""" + band + """\"@en;
+          rdfs:label ?name;
+          wdt:P495 ?country;
+          wdt:P1902 ?spotify;
+          wdt:P136 ?genre;
+          wdt:P18 ?img;
+          schema:description ?description .
         ?genre rdfs:label ?genreName.
         ?country rdfs:label ?countryName.
         OPTIONAL { ?entity wdt:P856 ?website }
-    }
-    UNION
-    {
-        ?entity wdt:P106 wd:Q177220;
-            rdfs:label \"""" + artist + """\"@en;
-            wdt:P1559 ?name;
-            wdt:P27 ?country;
-            wdt:P1902 ?spotify;
-            wdt:P136 ?genre;
-            wdt:P18 ?img;
-            schema:description ?description.
+      }
+      UNION
+      {
+        ?entity wdt:P31 wd:Q215380;
+          rdfs:label \"""" + band + """\"@en;
+          rdfs:label ?name;
+          wdt:P495 ?country;
+          wdt:P1902 ?spotify;
+          wdt:P136 ?genre;
+          wdt:P18 ?img;
+          schema:description ?description .
         ?genre rdfs:label ?genreName.
         ?country rdfs:label ?countryName.
         OPTIONAL { ?entity wdt:P856 ?website }
+      }
+      FILTER (lang(?genreName) = 'en')
+      FILTER (lang(?countryName) = 'en')
+      FILTER (lang(?description) = 'en')
     }
-    FILTER (lang(?genreName) = 'en')
-    FILTER (lang(?countryName) = 'en')
-    FILTER (lang(?description) = 'en')
-    }
+    LIMIT 1
     """
 
     wikidata.setQuery(query)
