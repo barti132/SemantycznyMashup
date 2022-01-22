@@ -33,12 +33,13 @@ def get_data_about_band(country_id):
             audio = spotify.get_data_about_id(spotify_id)
             if audio is not None:
                 break
+    image = spotify.get_artist_spotify_image(spotify_id)
 
     json_out = {
         "name": name,
         "description": description,
         "spotify": spotify_id,
-        "image": list(img),
+        "image": image,
         "genre": list(genre),
         "country": list(country),
         "website": list(website),
