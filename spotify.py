@@ -7,7 +7,8 @@ from spotipy.oauth2 import SpotifyClientCredentials
 cid = ''
 secret = ''
 
-client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
+client_credentials_manager = SpotifyClientCredentials(
+    client_id=cid, client_secret=secret)
 sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
 
@@ -35,3 +36,10 @@ def get_data_about_id(artist_id):
     }
 
     return audio_track
+
+
+def get_artist_spotify_image(artist_id):
+    result = sp.artist(artist_id)
+    image = result.image[0]
+
+    return image
