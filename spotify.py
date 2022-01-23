@@ -40,6 +40,6 @@ def get_data_about_id(artist_id):
 
 def get_artist_spotify_image(artist_id):
     result = sp.artist(artist_id)
-    image = result.image[0]
+    image = result["images"][0]
 
     return image
